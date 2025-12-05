@@ -153,17 +153,18 @@ class DatePickerModel extends CommonPickerModel {
     _fillLeftLists();
     _fillMiddleLists();
     _fillRightLists();
-    int minMonth = _minMonthOfCurrentYear();
-    int minDay = _minDayOfCurrentMonth();
-    _currentLeftIndex = this.currentTime.year - this.minTime.year;
-    _currentMiddleIndex = this.currentTime.month - minMonth;
-    _currentRightIndex = this.currentTime.day - minDay;
+    // Reverse index calculation: max year is at index 0
+    _currentLeftIndex = (this.maxTime.year - this.currentTime.year);
+    _currentMiddleIndex = (_maxMonthOfCurrentYear() - this.currentTime.month);
+    _currentRightIndex = (_maxDayOfCurrentMonth() - this.currentTime.day);
   }
 
   void _fillLeftLists() {
+    // Reverse order: max at top, scroll down to min
     this.leftList = List.generate(maxTime.year - minTime.year + 1, (int index) {
-      // print('LEFT LIST... ${minTime.year + index}${_localeYear()}');
-      return '${minTime.year + index}${_localeYear()}';
+      // Calculate reversed index: max year first, then descending
+      int reversedIndex = (maxTime.year - minTime.year) - index;
+      return '${minTime.year + reversedIndex}${_localeYear()}';
     });
   }
 
@@ -194,25 +195,29 @@ class DatePickerModel extends CommonPickerModel {
     int minMonth = _minMonthOfCurrentYear();
     int maxMonth = _maxMonthOfCurrentYear();
 
+    // Reverse order: max month at top, scroll down to min
     this.middleList = List.generate(maxMonth - minMonth + 1, (int index) {
-      return '${_localeMonth(minMonth + index)}';
+      int reversedIndex = (maxMonth - minMonth) - index;
+      return '${_localeMonth(minMonth + reversedIndex)}';
     });
   }
 
   void _fillRightLists() {
     int maxDay = _maxDayOfCurrentMonth();
     int minDay = _minDayOfCurrentMonth();
+    // Reverse order: max day at top, scroll down to min
     this.rightList = List.generate(maxDay - minDay + 1, (int index) {
-      return '${minDay + index}${_localeDay()}';
+      int reversedIndex = (maxDay - minDay) - index;
+      return '${minDay + reversedIndex}${_localeDay()}';
     });
   }
 
   @override
   void setLeftIndex(int index) {
     super.setLeftIndex(index);
-    //adjust middle
-    int destYear = index + minTime.year;
-    int minMonth = _minMonthOfCurrentYear();
+    //adjust middle - convert reversed index to actual year
+    int reversedIndex = (maxTime.year - minTime.year) - index;
+    int destYear = reversedIndex + minTime.year;
     DateTime newTime;
     //change date time
     if (currentTime.month == 2 && currentTime.day == 29) {
@@ -251,18 +256,22 @@ class DatePickerModel extends CommonPickerModel {
 
     _fillMiddleLists();
     _fillRightLists();
-    minMonth = _minMonthOfCurrentYear();
-    int minDay = _minDayOfCurrentMonth();
-    _currentMiddleIndex = currentTime.month - minMonth;
-    _currentRightIndex = currentTime.day - minDay;
+    // Recalculate indices based on updated currentTime
+    int maxMonth = _maxMonthOfCurrentYear();
+    int maxDay = _maxDayOfCurrentMonth();
+    // Reverse index calculation
+    _currentMiddleIndex = (maxMonth - currentTime.month);
+    _currentRightIndex = (maxDay - currentTime.day);
   }
 
   @override
   void setMiddleIndex(int index) {
     super.setMiddleIndex(index);
-    //adjust right
+    //adjust right - convert reversed index to actual month
     int minMonth = _minMonthOfCurrentYear();
-    int destMonth = minMonth + index;
+    int maxMonth = _maxMonthOfCurrentYear();
+    int reversedIndex = (maxMonth - minMonth) - index;
+    int destMonth = minMonth + reversedIndex;
     DateTime newTime;
     //change date time
     int dayCount = calcDateCount(currentTime.year, destMonth);
@@ -287,24 +296,29 @@ class DatePickerModel extends CommonPickerModel {
     }
 
     _fillRightLists();
-    int minDay = _minDayOfCurrentMonth();
-    _currentRightIndex = currentTime.day - minDay;
+    // Recalculate index based on updated currentTime
+    int maxDay = _maxDayOfCurrentMonth();
+    // Reverse index calculation
+    _currentRightIndex = (maxDay - currentTime.day);
   }
 
   @override
   void setRightIndex(int index) {
     super.setRightIndex(index);
+    // Convert reversed index to actual day
+    int maxDay = _maxDayOfCurrentMonth();
     int minDay = _minDayOfCurrentMonth();
+    int reversedIndex = (maxDay - minDay) - index;
     currentTime = currentTime.isUtc
         ? DateTime.utc(
             currentTime.year,
             currentTime.month,
-            minDay + index,
+            minDay + reversedIndex,
           )
         : DateTime(
             currentTime.year,
             currentTime.month,
-            minDay + index,
+            minDay + reversedIndex,
           );
   }
 
